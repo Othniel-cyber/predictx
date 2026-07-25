@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Statistiques - PredictX{% endblock %}
+{% block content %}
+<div class="animate-fade-in">
+    <h1 class="text-3xl font-black text-white">📊 Statistiques du modèle</h1>
+    <p class="text-gray-400 mt-1 mb-8">Performance globale et précision des prédictions PredictX</p>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="stat-card text-center">
+            <div class="text-3xl mb-2">🎯</div>
+            <div class="text-3xl font-black text-blue-400">{{ stats.overall_accuracy }}%</div>
+            <div class="text-xs text-gray-500">Précision globale</div>
+        </div>
+        <div class="stat-card text-center">
+            <div class="text-3xl mb-2">📈</div>
+            <div class="text-3xl font-black text-green-400">{{ stats.total_predictions }}</div>
+            <div class="text-xs text-gray-500">Pronostics générés</div>
+        </div>
+        <div class="stat-card text-center">
+            <div class="text-3xl mb-2">🎫</div>
+            <div class="text-3xl font-black text-purple-400">{{ stats.total_coupons }}</div>
+            <div class="text-xs text-gray-500">Coupons publiés</div>
+        </div>
+        <div class="stat-card text-center">
+            <div class="text-3xl mb-2">🤖</div>
+            <div class="text-3xl font-black text-yellow-400">{{ stats.model_accuracy }}%</div>
+            <div class="text-xs text-gray-500">Précision du modèle ML</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-card rounded-2xl p-6">
+            <h2 class="text-lg font-bold text-white mb-4">🏆 Précision par championnat</h2>
+            <div class="overflow-x-auto scrollbar-thin">
+                <table class="w-full text-sm">
+                    <thead><tr class="text-gray-400 border-b border-gray-800"><th class="text-left px-3 py-2">Championnat</th><th class="text-center px-3 py-2">Prons</th><th class="text-center px-3 py-2">Corrects</th><th class="text-center px-3 py-2">Précision</th></tr></thead>
+                    <tbody class="divide-y divide-gray-800/50">
+                        {% for ls in league_stats %}
+                        <tr class="table-row"><td class="px-3 py-2 text-white">{{ ls.league }}</td><td class="px-3 py-2 text-center text-gray-400">{{ ls.total }}</td><td class="px-3 py-2 text-center text-gray-400">{{ ls.correct }}</td><td class="px-3 py-2 text-center"><span class="font-bold {% if ls.accuracy >= 80 %}text-green-400{% elif ls.accuracy >= 60 %}text-yellow-400{% else %}text-red-400{% endif %}">{{ ls.accuracy }}%</span></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="bg-card rounded-2xl p-6">
+            <h2 class="text-lg font-bold text-white mb-4">📊 Précision par niveau de confiance</h2>
+            <div class="overflow-x-auto scrollbar-thin">
+                <table class="w-full text-sm">
+                    <thead><tr class="text-gray-400 border-b border-gray-800"><th class="text-left px-3 py-2">Niveau</th><th class="text-center px-3 py-2">Prons</th><th class="text-center px-3 py-2">Corrects</th><th class="text-center px-3 py-2">Précision</th></tr></thead>
+                    <tbody class="divide-y divide-gray-800/50">
+                        {% for cs in confidence_stats %}
+                        <tr class="table-row"><td class="px-3 py-2"><span class="inline-block w-6 h-6 rounded-full text-white text-xs text-center leading-6 conf-{{ cs.level }}">{{ cs.level }}</span></td><td class="px-3 py-2 text-center text-gray-400">{{ cs.total }}</td><td class="px-3 py-2 text-center text-gray-400">{{ cs.correct }}</td><td class="px-3 py-2 text-center"><span class="font-bold {% if cs.accuracy >= 80 %}text-green-400{% elif cs.accuracy >= 60 %}text-yellow-400{% else %}text-red-400{% endif %}">{{ cs.accuracy }}%</span></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

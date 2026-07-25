@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+.env
+*.json
+*.db
+model.pkl
+uvicorn.log
+uvicorn_err.log
+uvicorn_out.txt
+prompt.txt

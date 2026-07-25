@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PredictX - Pronostics Football IA{% endblock %}</title>
+    {% block head_extra %}{% endblock %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #0a0e17; color: #e2e8f0; }
+        .bg-card { background: linear-gradient(145deg, #111827, #0f1729); border: 1px solid #1e293b; }
+        .bg-card:hover { border-color: #3b82f6; box-shadow: 0 0 20px rgba(59,130,246,0.1); }
+        .bg-gradient-card { background: linear-gradient(135deg, #1e3a8a22, #312e8122); border: 1px solid #1e293b; }
+        .text-glow { text-shadow: 0 0 20px rgba(59,130,246,0.3); }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .btn-primary:hover { background: linear-gradient(135deg, #60a5fa, #3b82f6); box-shadow: 0 0 20px rgba(59,130,246,0.4); }
+        .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
+        .btn-success:hover { box-shadow: 0 0 20px rgba(16,185,129,0.4); }
+        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .badge-gold { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .badge-premium { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+        .badge-green { background: linear-gradient(135deg, #10b981, #059669); }
+        .badge-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .border-glow { border-color: #3b82f6; box-shadow: 0 0 15px rgba(59,130,246,0.2); }
+        .table-row:hover { background: rgba(59,130,246,0.05); }
+        .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: #0a0e17; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        .animate-fade-in { animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-pulse-slow { animation: pulse 3s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .conf-10 { background: #10b981; box-shadow: 0 0 10px rgba(16,185,129,0.5); }
+        .conf-9 { background: #34d399; }
+        .conf-8 { background: #3b82f6; }
+        .conf-7 { background: #6366f1; }
+        .conf-6 { background: #8b5cf6; }
+        .conf-5 { background: #f59e0b; }
+        .conf-4 { background: #f97316; }
+        .conf-3 { background: #ef4444; }
+        .conf-2 { background: #dc2626; }
+        .conf-1 { background: #991b1b; }
+        .blur-content { filter: blur(4px); pointer-events: none; user-select: none; }
+        .stat-card { background: linear-gradient(145deg, #111827, #0f1729); border: 1px solid #1e293b; border-radius: 16px; padding: 20px; transition: all 0.3s; }
+        .stat-card:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(59,130,246,0.15); }
+        .live-dot { display: inline-block; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; animation: pulse 1.5s infinite; }
+    </style>
+</head>
+<body>
+    <nav class="bg-card border-b border-gray-800 sticky top-0 z-50 backdrop-blur-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16 items-center">
+                <a href="/" class="flex items-center space-x-2">
+                    <span class="text-2xl font-black" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">⚡ PredictX</span>
+                    <span class="text-xs btn-primary text-white px-2 py-0.5 rounded-full font-bold">IA</span>
+                </a>
+                <div class="hidden lg:flex items-center space-x-1">
+                    <a href="/" class="px-3 py-2 text-sm rounded-lg hover:bg-gray-800 transition text-gray-300 hover:text-white">Accueil</a>
+                    <a href="/predictions" class="px-3 py-2 text-sm rounded-lg hover:bg-gray-800 transition text-gray-300 hover:text-white">Pronostics</a>
+                    <a href="/top-picks" class="px-3 py-2 text-sm rounded-lg hover:bg-gray-800 transition text-gray-300 hover:text-white">🔥 Top</a>
+                    <a href="/live" class="px-3 py-2 text-sm rounded-lg hover:bg-gray-800 transition text-gray-300 hover:text-white"><span class="live-dot mr-1"></span>Live</a>
+                    <a href="/history" class="px-3 py-2 text-sm rounded-lg hover:bg-gray-800 transition text-gray-300 hover:text-white">Coupons</a>
+                    <a href="/stats" class="px-3 py-2 text-sm rounded-lg hover:bg-gray-800 transition text-gray-300 hover:text-white">Stats</a>
+                    <div class="h-6 w-px bg-gray-700 mx-2"></div>
+                    <a href="/subscribe" class="px-4 py-2 text-sm rounded-lg btn-primary text-white font-semibold hover:shadow-lg transition">S'abonner</a>
+                    <div class="h-6 w-px bg-gray-700 mx-2"></div>
+                    {% if session.get("user_id") %}
+                    <a href="/account" class="px-3 py-2 text-sm rounded-lg hover:bg-gray-800 transition text-gray-300 hover:text-white">👤</a>
+                    <a href="/settings" class="px-3 py-2 text-sm rounded-lg hover:bg-gray-800 transition text-gray-300 hover:text-white">⚙️</a>
+                    <a href="/logout" class="px-3 py-2 text-sm rounded-lg hover:bg-gray-800 transition text-gray-300 hover:text-white">Déco</a>
+                    {% else %}
+                    <a href="/login" class="px-4 py-2 text-sm rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-800 transition">Connexion</a>
+                    {% endif %}
+                </div>
+                <button id="menu-btn" class="lg:hidden text-white text-2xl p-2">☰</button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden lg:hidden bg-card border-t border-gray-800 px-4 py-3 space-y-2">
+            <a href="/" class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300">Accueil</a>
+            <a href="/predictions" class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300">Pronostics</a>
+            <a href="/top-picks" class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300">🔥 Top picks</a>
+            <a href="/live" class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300">📺 Live</a>
+            <a href="/history" class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300">Coupons</a>
+            <a href="/stats" class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300">Stats</a>
+            <a href="/subscribe" class="block px-3 py-2 text-sm rounded-lg btn-primary text-white font-semibold text-center">S'abonner</a>
+            <a href="/contact" class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300">Contact</a>
+            <a href="/cgu" class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300">CGU</a>
+            {% if session.get("user_id") %}
+            <a href="/account" class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300">Mon compte</a>
+            <a href="/settings" class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300">Paramètres</a>
+            <a href="/logout" class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300">Déconnexion</a>
+            {% else %}
+            <a href="/login" class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300">Connexion</a>
+            <a href="/register" class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300">Inscription</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <script>
+        document.getElementById('menu-btn')?.addEventListener('click', function() {
+            var menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+    </script>
+
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="border-t border-gray-800 mt-16 py-10">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="text-lg font-bold mb-3" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">PredictX</div>
+                    <p class="text-sm text-gray-500">Pronostics football par IA. Modèle entraîné sur 19 000+ matchs.</p>
+                </div>
+                <div>
+                    <div class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Menus</div>
+                    <div class="space-y-2 text-sm text-gray-500"><a href="/" class="block hover:text-white">Accueil</a><a href="/predictions" class="block hover:text-white">Pronostics</a><a href="/top-picks" class="block hover:text-white">Top picks</a><a href="/live" class="block hover:text-white">Live</a></div>
+                </div>
+                <div>
+                    <div class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Infos</div>
+                    <div class="space-y-2 text-sm text-gray-500"><a href="/stats" class="block hover:text-white">Statistiques</a><a href="/history" class="block hover:text-white">Coupons</a><a href="/contact" class="block hover:text-white">Contact</a><a href="/cgu" class="block hover:text-white">CGU</a></div>
+                </div>
+                <div>
+                    <div class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Contact</div>
+                    <div class="space-y-2 text-sm text-gray-500">
+                        <a href="https://wa.me/2290140305483" target="_blank" class="block hover:text-white">WhatsApp</a>
+                        <a href="mailto:support@predictx.com" class="block hover:text-white">Email</a>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center text-sm text-gray-600 pt-8 border-t border-gray-800">
+                <p>© 2026 PredictX. Pronostics fournis à titre indicatif. Aucun résultat garanti.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

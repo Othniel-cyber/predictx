@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}{{ match.home_team_name }} vs {{ match.away_team_name }} - PredictX{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto animate-fade-in">
+    <div class="bg-card rounded-2xl p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex-1 text-center">
+                <div class="w-16 h-16 mx-auto rounded-full overflow-hidden flex items-center justify-center text-lg font-bold text-white mb-2" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                    {% if home_logo %}
+                    <img src="{{ home_logo }}" alt="{{ match.home_team_name }}" class="w-full h-full object-contain" onerror="this.style.display='none';this.parentElement.innerHTML='{{ match.home_team_name[:2]|upper }}'">
+                    {% else %}
+                    {{ match.home_team_name[:2]|upper }}
+                    {% endif %}
+                </div>
+                <h2 class="text-xl font-bold text-white">{{ match.home_team_name }}</h2>
+            </div>
+            <div class="text-center px-6">
+                {% if match.home_score is not none %}
+                <div class="text-4xl font-black text-white">{{ match.home_score }} - {{ match.away_score }}</div>
+                {% else %}
+                <div class="text-2xl font-bold text-gray-500">VS</div>
+                {% endif %}
+                <div class="text-xs text-gray-500 mt-1">{{ match.competition }}</div>
+            </div>
+            <div class="flex-1 text-center">
+                <div class="w-16 h-16 mx-auto rounded-full overflow-hidden flex items-center justify-center text-lg font-bold text-white mb-2" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                    {% if away_logo %}
+                    <img src="{{ away_logo }}" alt="{{ match.away_team_name }}" class="w-full h-full object-contain" onerror="this.style.display='none';this.parentElement.innerHTML='{{ match.away_team_name[:2]|upper }}'">
+                    {% else %}
+                    {{ match.away_team_name[:2]|upper }}
+                    {% endif %}
+                </div>
+                <h2 class="text-xl font-bold text-white">{{ match.away_team_name }}</h2>
+            </div>
+        </div>
+        <div class="text-center mt-4 pt-4 border-t border-gray-800">
+            <span class="text-gray-400">{{ match.date.strftime('%d/%m/%Y à %H:%M') if match.date else 'Date inconnue' }}</span>
+            <span class="mx-3 text-gray-600">|</span>
+            <span class="px-3 py-1 rounded-full text-xs font-bold
+                {% if match.status == 'FINISHED' %}bg-gray-700 text-gray-300
+                {% elif match.status == 'LIVE' %}bg-red-900/50 text-red-400 animate-pulse
+                {% elif match.status == 'SCHEDULED' %}badge-blue text-white
+                {% else %}bg-yellow-900/50 text-yellow-400{% endif %}">
+                {{ match.status }}
+            </span>
+        </div>
+    </div>
+
+    {% if prediction %}
+    <div class="bg-card rounded-2xl p-6 mb-6">
+        <h3 class="font-bold text-white mb-4">📊 Analyse IA</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div class="stat-card text-center">
+                <div class="text-xs text-gray-500 mb-1">{{ match.home_team_name }}</div>
+                <div class="text-2xl font-black text-blue-400">{{ '%.1f'|format(prediction.home_expected_goals) if prediction.home_expected_goals else '-' }}</div>
+                <div class="text-xs text-gray-500">Buts attendus</div>
+            </div>
+            <div class="stat-card text-center">
+                <div class="text-xs text-gray-500 mb-1">{{ match.away_team_name }}</div>
+                <div class="text-2xl font-black text-purple-400">{{ '%.1f'|format(prediction.away_expected_goals) if prediction.away_expected_goals else '-' }}</div>
+                <div class="text-xs text-gray-500">Buts attendus</div>
+            </div>
+            <div class="stat-card text-center">
+                <div class="text-xs text-gray-500 mb-1">Confiance</div>
+                <div class="text-2xl font-black text-yellow-400">{{ prediction.confidence_score }}/10</div>
+                <div class="text-xs text-gray-500">Note IA</div>
+            </div>
+        </div>
+        {% if subscribed %}
+        <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="bg-gray-800/50 rounded-xl p-3 text-center">
+                <div class="text-xs text-gray-500">1</div>
+                <div class="text-sm font-bold text-white">{{ '%.1f'|format(prediction.prob_home * 100) }}%</div>
+            </div>
+            <div class="bg-gray-800/50 rounded-xl p-3 text-center">
+                <div class="text-xs text-gray-500">N</div>
+                <div class="text-sm font-bold text-white">{{ '%.1f'|format(prediction.prob_draw * 100) }}%</div>
+            </div>
+            <div class="bg-gray-800/50 rounded-xl p-3 text-center">
+                <div class="text-xs text-gray-500">2</div>
+                <div class="text-sm font-bold text-white">{{ '%.1f'|format(prediction.prob_away * 100) }}%</div>
+            </div>
+            <div class="bg-gray-800/50 rounded-xl p-3 text-center">
+                <div class="text-xs text-gray-500">Meilleur marché</div>
+                <div class="text-sm font-bold text-blue-400">{{ prediction.best_market }}</div>
+            </div>
+        </div>
+        <div class="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div class="bg-gray-800/30 rounded-xl p-2 text-center">
+                <div class="text-xs text-gray-500">Over 2.5</div>
+                <div class="text-sm font-bold text-white">{{ '%.1f'|format(prediction.prob_over_25 * 100) }}%</div>
+            </div>
+            <div class="bg-gray-800/30 rounded-xl p-2 text-center">
+                <div class="text-xs text-gray-500">Under 2.5</div>
+                <div class="text-sm font-bold text-white">{{ '%.1f'|format(prediction.prob_under_25 * 100) }}%</div>
+            </div>
+            <div class="bg-gray-800/30 rounded-xl p-2 text-center">
+                <div class="text-xs text-gray-500">GG</div>
+                <div class="text-sm font-bold text-white">{{ '%.1f'|format(prediction.prob_gg * 100) }}%</div>
+            </div>
+            <div class="bg-gray-800/30 rounded-xl p-2 text-center">
+                <div class="text-xs text-gray-500">NG</div>
+                <div class="text-sm font-bold text-white">{{ '%.1f'|format(prediction.prob_ng * 100) }}%</div>
+            </div>
+            <div class="bg-gray-800/30 rounded-xl p-2 text-center">
+                <div class="text-xs text-gray-500">Over 3.5</div>
+                <div class="text-sm font-bold text-white">{{ '%.1f'|format(prediction.prob_over_35 * 100) }}%</div>
+            </div>
+        </div>
+        {% else %}
+        <div class="mt-6 text-center py-4 rounded-xl bg-gray-800/50">
+            <p class="text-gray-400 text-sm">🔒 Abonne-toi pour voir les probabilités détaillées</p>
+            <a href="/subscribe" class="text-blue-400 hover:underline text-sm">Voir les offres</a>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="bg-card rounded-2xl p-6">
+        <h3 class="font-bold text-white mb-4">📋 Historique face-à-face</h3>
+        {% if h2h %}
+        <div class="divide-y divide-gray-800/50">
+            {% for h in h2h %}
+            <div class="flex items-center justify-between py-3 table-row transition">
+                <div class="flex-1 min-w-0">
+                    <span class="text-sm text-white">{{ h.home_team_name }}</span>
+                    <span class="text-gray-600 mx-1 text-sm">vs</span>
+                    <span class="text-sm text-white">{{ h.away_team_name }}</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm text-gray-400">{{ h.competition }}</span>
+                    <span class="text-xs text-gray-500">{{ h.date.strftime('%d/%m/%Y') if h.date else '' }}</span>
+                    {% if h.home_score is not none %}
+                    <span class="font-bold text-white min-w-[40px] text-center">{{ h.home_score }}-{{ h.away_score }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-sm text-center py-6">Aucun historique disponible pour ces deux équipes</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

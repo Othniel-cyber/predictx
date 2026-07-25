@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}En direct - PredictX{% endblock %}
+{% block content %}
+<div class="animate-fade-in">
+    <h1 class="text-3xl font-black text-white">📺 Matchs en direct</h1>
+    <p class="text-gray-400 mt-1 mb-8">Scores en temps réel des matchs pronostiqués</p>
+
+    {% if live_matches %}
+    <div class="space-y-4">
+        {% for item in live_matches %}
+        <a href="/match/{{ item.match.id }}" class="bg-card rounded-xl p-6 card-hover transition animate-fade-in block">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-xs text-gray-500">{{ item.match.competition }}</span>
+                <span class="text-xs bg-red-900/50 text-red-400 px-2 py-0.5 rounded-full font-bold"><span class="live-dot mr-1"></span>EN DIRECT</span>
+            </div>
+            <div class="flex items-center justify-center space-x-8 my-6">
+                <div class="text-right flex-1 flex items-center justify-end space-x-3">
+                    <div class="font-bold text-xl text-white">{{ item.match.home_team_name }}</div>
+                    <div class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                        {% if item.home_logo %}
+                        <img src="{{ item.home_logo }}" alt="" class="w-full h-full object-contain" onerror="this.style.display='none';this.parentElement.innerHTML='{{ item.match.home_team_name[:2]|upper }}'">
+                        {% else %}
+                        {{ item.match.home_team_name[:2]|upper }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="text-5xl font-black text-white">
+                        <span class="{% if (item.match.home_score or 0) > (item.match.away_score or 0) %}text-green-400{% endif %}">{{ item.match.home_score or 0 }}</span>
+                        <span class="text-gray-600 mx-3">-</span>
+                        <span class="{% if (item.match.away_score or 0) > (item.match.home_score or 0) %}text-green-400{% endif %}">{{ item.match.away_score or 0 }}</span>
+                    </div>
+                </div>
+                <div class="text-left flex-1 flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                        {% if item.away_logo %}
+                        <img src="{{ item.away_logo }}" alt="" class="w-full h-full object-contain" onerror="this.style.display='none';this.parentElement.innerHTML='{{ item.match.away_team_name[:2]|upper }}'">
+                        {% else %}
+                        {{ item.match.away_team_name[:2]|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="font-bold text-xl text-white">{{ item.match.away_team_name }}</div>
+                </div>
+            </div>
+            {% if item.prediction %}
+            <div class="text-center text-sm text-gray-400">
+                Pronostic: <span class="font-bold text-blue-400">{{ item.prediction.best_market }}</span>
+                <span class="text-gray-600 mx-2">•</span>
+                <span>{{ (item.prediction.best_probability * 100)|round(1) }}%</span>
+            </div>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-20">
+        <div class="text-6xl mb-4">📡</div>
+        <h2 class="text-xl font-bold text-gray-400 mb-2">Aucun match en direct</h2>
+        <p class="text-gray-500 mb-6">Reviens plus tard pour voir les scores en temps réel</p>
+        <a href="/predictions" class="px-6 py-3 rounded-xl btn-primary text-white font-semibold inline-block">Voir les pronostics à venir</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

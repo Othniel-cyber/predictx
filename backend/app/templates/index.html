@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}PredictX - Pronostics Football IA{% endblock %}
+{% block content %}
+
+<div class="relative overflow-hidden rounded-3xl mb-10" style="background: linear-gradient(135deg, #0f1729 0%, #1a1a3e 50%, #0f1729 100%);">
+    <div class="absolute inset-0 opacity-10" style="background: radial-gradient(circle at 20% 50%, #3b82f6 0%, transparent 50%), radial-gradient(circle at 80% 50%, #8b5cf6 0%, transparent 50%);"></div>
+    <div class="absolute inset-0 opacity-30" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Lionel_Messi_20180626.jpg/800px-Lionel_Messi_20180626.jpg'); background-size: cover; background-position: center right; background-repeat: no-repeat;"></div>
+    <div class="relative z-10 flex flex-col md:flex-row items-center px-8 py-10 md:py-14">
+        <div class="flex-1 text-center md:text-left">
+            <div class="inline-block px-3 py-1 rounded-full text-xs font-bold mb-4" style="background: rgba(59,130,246,0.2); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3);">
+                🤖 Pronostics par Intelligence Artificielle
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black text-white leading-tight mb-3">
+                Pronostics Football<br>
+                <span style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Machine Learning</span>
+            </h1>
+            <div class="text-2xl md:text-3xl font-bold text-white mb-2">{{ today_date }}</div>
+            <p class="text-gray-400 text-sm">Analysés par IA • 500+ ligues • 19 000+ matchs historiques • Précision 90.9%</p>
+            <div class="flex flex-wrap gap-3 mt-6">
+                <a href="/subscribe" class="px-6 py-3 rounded-xl btn-primary text-white font-bold">🚀 Voir les offres</a>
+                <a href="/predictions" class="px-6 py-3 rounded-xl border border-gray-600 text-gray-300 hover:bg-gray-800 transition font-medium">Tous les pronostics</a>
+            </div>
+        </div>
+        <div class="mt-8 md:mt-0 md:ml-8 flex-shrink-0 w-48 h-48 md:w-64 md:h-64">
+        </div>
+    </div>
+</div>
+
+{% if coupon %}
+<div class="bg-card rounded-2xl p-6 mb-8 animate-fade-in">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-xl font-bold text-white">📋 Coupon du jour #{{ coupon.id }}</h2>
+            <p class="text-xs text-gray-500 mt-1">{{ coupon_matches|length }} matchs sélectionnés par l'IA</p>
+        </div>
+        <span class="px-3 py-1 rounded-full text-xs font-bold
+            {% if coupon.status == 'WON' %}badge-green text-white
+            {% elif coupon.status == 'LOST' %}btn-danger text-white
+            {% else %}badge-blue text-white{% endif %}">
+            {{ coupon.status }}
+        </span>
+    </div>
+    {% if coupon.status in ('WON', 'LOST') %}
+    <div class="text-center mb-6 py-3 rounded-xl bg-gray-800/50">
+        <span class="text-lg font-bold text-white">{{ coupon.won_bets }}/{{ coupon.total_bets }} bons pronostics</span>
+    </div>
+    {% endif %}
+    <div class="space-y-4">
+        {% for item in coupon_matches %}
+        <a href="/match/{{ item.match_id }}" class="flex items-center justify-between p-3 rounded-xl transition {% if item.status == 'WON' %}bg-green-900/20 border border-green-800/30{% elif item.status == 'LOST' %}bg-red-900/20 border border-red-800/30{% else %}bg-gray-800/30 border border-gray-700/30{% endif %} card-hover">
+            <div class="flex items-center space-x-3 flex-1 min-w-0">
+                <div class="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden flex items-center justify-center text-sm font-bold text-white" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                    {% if item.home_logo %}
+                    <img src="{{ item.home_logo }}" alt="{{ item.home_team }}" class="w-full h-full object-contain" onerror="this.style.display='none';this.parentElement.innerHTML='{{ item.home_initials }}'">
+                    {% else %}
+                    {{ item.home_initials }}
+                    {% endif %}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-xs text-gray-500 mb-0.5">{{ item.competition }}</div>
+                    <div class="font-semibold text-white truncate text-sm">{{ item.home_team }}</div>
+                </div>
+            </div>
+            <div class="text-center px-3">
+                <div class="text-xs text-gray-600 font-medium">VS</div>
+            </div>
+            <div class="flex items-center space-x-3 flex-1 min-w-0 justify-end">
+                <div class="flex-1 min-w-0 text-right">
+                    <div class="text-xs text-gray-500 mb-0.5">&nbsp;</div>
+                    <div class="font-semibold text-white truncate text-sm">{{ item.away_team }}</div>
+                </div>
+                <div class="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden flex items-center justify-center text-sm font-bold text-white" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                    {% if item.away_logo %}
+                    <img src="{{ item.away_logo }}" alt="{{ item.away_team }}" class="w-full h-full object-contain" onerror="this.style.display='none';this.parentElement.innerHTML='{{ item.away_initials }}'">
+                    {% else %}
+                    {{ item.away_initials }}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="flex items-center space-x-4 ml-4 pl-4 border-l border-gray-700/50">
+                {% if item.status != 'PENDING' and item.home_score is not none %}
+                <span class="font-bold text-lg text-white min-w-[40px] text-center">{{ item.home_score }}-{{ item.away_score }}</span>
+                {% endif %}
+                <div class="text-right min-w-[80px]">
+                    {% if subscribed %}
+                    <span class="text-sm font-bold text-blue-400">{{ item.best_market }}</span>
+                    <div class="flex items-center space-x-2 mt-0.5 justify-end">
+                        <span class="text-xs text-gray-400">{{ item.best_probability }}%</span>
+                        <span class="conf-{{ item.confidence_score }} text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ item.confidence_score }}/10</span>
+                    </div>
+                    {% else %}
+                    <span class="text-sm blur-content select-none text-gray-500">Marché caché</span>
+                    <div class="flex items-center space-x-2 mt-0.5 justify-end">
+                        <span class="text-xs blur-content select-none text-gray-500">XX%</span>
+                        <span class="text-xs bg-gray-700 text-gray-500 font-bold px-2 py-0.5 rounded-full">?/10</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="text-center py-16 bg-card rounded-2xl mb-8">
+    <div class="text-5xl mb-4">📅</div>
+    <h2 class="text-xl font-bold text-gray-300 mb-2">Aucun coupon pour aujourd'hui</h2>
+    <p class="text-gray-500 mb-6">Le coupon du jour sera disponible après la mise à jour quotidienne</p>
+    <a href="/predictions" class="btn-primary text-white px-6 py-3 rounded-xl inline-block font-medium">Voir tous les pronostics</a>
+</div>
+{% endif %}
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="stat-card text-center">
+        <div class="text-2xl mb-1">🎯</div>
+        <div class="text-2xl font-black text-blue-400">90.9%</div>
+        <div class="text-xs text-gray-500">Précision modèle</div>
+    </div>
+    <div class="stat-card text-center">
+        <div class="text-2xl mb-1">📊</div>
+        <div class="text-2xl font-black text-green-400">{{ stats.total_predictions }}</div>
+        <div class="text-xs text-gray-500">Pronostics</div>
+    </div>
+    <div class="stat-card text-center">
+        <div class="text-2xl mb-1">🏆</div>
+        <div class="text-2xl font-black text-purple-400">{{ stats.total_leagues }}</div>
+        <div class="text-xs text-gray-500">Ligues couvertes</div>
+    </div>
+    <div class="stat-card text-center">
+        <div class="text-2xl mb-1">📋</div>
+        <div class="text-2xl font-black text-yellow-400">{{ stats.total_coupons }}</div>
+        <div class="text-xs text-gray-500">Coupons</div>
+    </div>
+</div>
+
+{% endblock %}

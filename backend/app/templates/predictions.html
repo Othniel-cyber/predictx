@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Pronostics - PredictX{% endblock %}
+{% block head_extra %}
+<script>
+var allLeagues = [];
+{% for league, preds in predictions_by_league.items() %}
+allLeagues.push({
+    name: {{ league|tojson|safe }},
+    matches: [
+        {% for p in preds %}
+        { home: {{ p.match.home_team_name|tojson|safe }}, away: {{ p.match.away_team_name|tojson|safe }}, id: {{ p.match.id }} },
+        {% endfor %}
+    ]
+});
+{% endfor %}
+
+function filterMatches() {
+    var input = document.getElementById('search-input');
+    var filter = input.value.toLowerCase().trim();
+    var suggest = document.getElementById('suggestions');
+    suggest.innerHTML = '';
+    if (filter.length < 2) {
+        document.querySelectorAll('.league-card').forEach(function(c) { c.style.display = ''; });
+        return;
+    }
+    var found = [];
+    allLeagues.forEach(function(league) {
+        league.matches.forEach(function(m) {
+            if (m.home.toLowerCase().indexOf(filter) > -1 || m.away.toLowerCase().indexOf(filter) > -1) {
+                found.push(m);
+            }
+        });
+    });
+    found.slice(0, 8).forEach(function(m) {
+        var a = document.createElement('a');
+        a.href = '/match/' + m.id;
+        a.className = 'block px-4 py-2 text-sm text-white hover:bg-gray-700 transition';
+        a.textContent = m.home + ' vs ' + m.away;
+        suggest.appendChild(a);
+    });
+    if (found.length > 8) {
+        var more = document.createElement('div');
+        more.className = 'px-4 py-2 text-xs text-gray-500';
+        more.textContent = '+' + (found.length - 8) + ' autres...';
+        suggest.appendChild(more);
+    }
+    document.querySelectorAll('.league-card').forEach(function(c) {
+        var text = c.textContent.toLowerCase();
+        c.style.display = text.indexOf(filter) > -1 ? '' : 'none';
+    });
+}
+
+document.addEventListener('click', function(e) {
+    var s = document.getElementById('suggestions');
+    if (!document.getElementById('search-input').contains(e.target)) {
+        s.innerHTML = '';
+    }
+});
+</script>
+{% endblock %}
+{% block content %}
+<div class="animate-fade-in">
+    <h1 class="text-3xl font-black text-white text-glow">📊 Tous les pronostics</h1>
+    <p class="text-gray-400 mt-1 mb-4">Classés par ligue et par note de confiance</p>
+
+    <div class="relative mb-4">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 z-10">🔍</span>
+        <input id="search-input" type="text" onkeyup="filterMatches()" placeholder="Rechercher une équipe..."
+               class="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-gray-500">
+        <div id="suggestions" class="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-xl z-50"></div>
+    </div>
+    <style>
+        #search-input:focus ~ #suggestions:empty,
+        #suggestions:empty { display: none; }
+        #suggestions:not(:empty) { display: block; }
+        #suggestions a:last-child { border-radius: 0 0 0.75rem 0.75rem; }
+    </style>
+
+    <div class="flex space-x-2 mb-6">
+        <a href="/predictions" class="px-4 py-2 text-sm rounded-lg font-medium transition {% if not all %}btn-primary text-white{% else %}bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700{% endif %}">À venir</a>
+        <a href="/predictions?all=1" class="px-4 py-2 text-sm rounded-lg font-medium transition {% if all %}btn-primary text-white{% else %}bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700{% endif %}">Tous les matchs</a>
+    </div>
+
+    {% for league, preds in predictions_by_league.items() %}
+    <div class="league-card bg-card rounded-2xl mb-8 overflow-hidden animate-fade-in">
+        <div class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 px-6 py-3 flex justify-between items-center border-b border-gray-800">
+            <h3 class="font-bold text-white">{{ league }}</h3>
+            <span class="text-xs text-gray-400">{{ preds|length }} matchs</span>
+        </div>
+        <div class="divide-y divide-gray-800/50">
+            {% for p in preds %}
+            <a href="/match/{{ p.match.id }}" class="flex items-center justify-between px-6 py-5 table-row transition">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center space-x-2">
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold text-white" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                            {% if p.home_logo %}
+                            <img src="{{ p.home_logo }}" alt="" class="w-full h-full object-contain" onerror="this.style.display='none';this.parentElement.innerHTML='{{ p.match.home_team_name[:2]|upper }}'">
+                            {% endif %}
+                        </div>
+                        <span class="font-medium text-white">{{ p.match.home_team_name }}</span>
+                        <span class="text-gray-600">vs</span>
+                        <span class="font-medium text-white">{{ p.match.away_team_name }}</span>
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold text-white" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                            {% if p.away_logo %}
+                            <img src="{{ p.away_logo }}" alt="" class="w-full h-full object-contain" onerror="this.style.display='none';this.parentElement.innerHTML='{{ p.match.away_team_name[:2]|upper }}'">
+                            {% endif %}
+                        </div>
+                    {% if all and p.match.status != "SCHEDULED" %}
+                    <span class="text-xs ml-2 px-2 py-0.5 rounded-full
+                        {% if p.match.status == 'FINISHED' %}bg-gray-700 text-gray-300
+                        {% elif p.match.status == 'LIVE' %}bg-red-900/50 text-red-400 animate-pulse
+                        {% else %}bg-blue-900/50 text-blue-400{% endif %}">
+                        {{ p.match.status }}
+                    </span>
+                    {% endif %}
+                     <span class="text-xs text-gray-500 ml-2">{{ p.match.date.strftime('%d/%m %H:%M') if p.match.date else '' }}</span>
+                </div>
+                </div>
+                <div class="flex items-center space-x-4 ml-4">
+                    {% if all and p.match.status in ("FINISHED", "LIVE") and p.match.home_score is not none %}
+                    <span class="font-bold text-lg text-white">{{ p.match.home_score }}-{{ p.match.away_score }}</span>
+                    {% endif %}
+                    {% if subscribed %}
+                    <span class="text-sm font-medium text-blue-400">{{ p.prediction.best_market }}</span>
+                    <span class="text-xs text-gray-400">{{ (p.prediction.best_probability * 100)|round(1) }}%</span>
+                    {% else %}
+                    <span class="text-sm blur-content select-none text-gray-500">Marché caché</span>
+                    <span class="text-xs blur-content select-none text-gray-500">XX%</span>
+                    {% endif %}
+                    <span class="conf-{{ p.prediction.confidence_score }} text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[40px] text-center">{{ p.prediction.confidence_score }}/10</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

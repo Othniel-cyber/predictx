@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Paramètres - PredictX{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto animate-fade-in">
+    <h1 class="text-3xl font-black text-white mb-6">⚙️ Paramètres</h1>
+
+    {% if success %}
+    <div class="bg-green-900/30 border border-green-800/50 text-green-400 px-4 py-3 rounded-xl mb-4 text-sm">{{ success }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="bg-red-900/30 border border-red-800/50 text-red-400 px-4 py-3 rounded-xl mb-4 text-sm">{{ error }}</div>
+    {% endif %}
+
+    <div class="bg-card rounded-2xl p-6 mb-6">
+        <h2 class="font-bold text-lg text-white mb-4">Informations personnelles</h2>
+        <form method="POST" action="/settings" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Nom</label>
+                <input type="text" name="name" value="{{ user.name }}" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 text-white">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Email</label>
+                <input type="email" name="email" value="{{ user.email }}" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 text-white">
+            </div>
+            <button type="submit" class="btn-primary text-white font-bold px-6 py-2 rounded-xl transition">Enregistrer</button>
+        </form>
+    </div>
+
+    <div class="bg-card rounded-2xl p-6">
+        <h2 class="font-bold text-lg text-white mb-4">Changer le mot de passe</h2>
+        <form method="POST" action="/settings" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Mot de passe actuel</label>
+                <input type="password" name="current_password" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 text-white">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Nouveau mot de passe</label>
+                <input type="password" name="new_password" minlength="6" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 text-white">
+            </div>
+            <button type="submit" class="btn-primary text-white font-bold px-6 py-2 rounded-xl transition">Mettre à jour</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
