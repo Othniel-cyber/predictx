@@ -13,8 +13,10 @@ from app.routers.web_router import router as web_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import app.models
     try:
         Base.metadata.create_all(bind=engine)
+        print("Database tables created/verified")
     except Exception as e:
         print(f"DB init error: {e}")
     try:
@@ -22,7 +24,7 @@ async def lifespan(app: FastAPI):
         init_firebase()
         print("Firebase initialized successfully")
     except Exception as e:
-        print(f"Firebase init skipped")
+        print(f"Firebase init skipped: {e}")
     yield
 
 
@@ -75,6 +77,8 @@ def update_data(key: str = ""):
         errors.append(f"Firebase: {e}")
 
     db = SessionLocal()
+    import app.models
+    Base.metadata.create_all(bind=engine)
     matches_count = 0
     predictions_count = 0
     coupon_info = None
