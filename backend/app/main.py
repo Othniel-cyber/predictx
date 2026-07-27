@@ -51,37 +51,67 @@ def update_data(key: str = ""):
     if API_UPDATE_KEY and key != API_UPDATE_KEY:
         raise HTTPException(status_code=403, detail="Clé API invalide")
     from app.database import SessionLocal
-    from app.services.data_collector import save_matches_to_db
-    from app.services.prediction_engine import predict_all_upcoming_matches
-    from app.services.coupon_service import generate_daily_coupon, update_coupon_results
-    from app.firebase_db import init_firebase, get_db
     from datetime import datetime
-    init_firebase()
-    fb_db = get_db()
-    now = datetime.now()
-    expired = fb_db.collection("users").where("subscription_type", "!=", "none").get()
+    import traceback
+
     expired_count = 0
-    for u in expired:
-        data = u.to_dict()
-        expiry = data.get("subscription_expiry")
-        if expiry and expiry < now:
-            fb_db.collection("users").document(u.id).update({
-                "subscription_type": "none",
-                "subscription_expiry": None,
-            })
-            expired_count += 1
-    db = SessionLocal()
+    errors = []
     try:
-        save_matches_to_db(db)
-        update_coupon_results(db)
-        predictions = predict_all_upcoming_matches(db)
-        coupon = generate_daily_coupon(db)
+        from app.firebase_db import init_firebase, get_db
+        init_firebase()
+        fb_db = get_db()
+        now = datetime.now()
+        expired = fb_db.collection("users").where("subscription_type", "!=", "none").get()
+        for u in expired:
+            data = u.to_dict()
+            expiry = data.get("subscription_expiry")
+            if expiry and expiry < now:
+                fb_db.collection("users").document(u.id).update({
+                    "subscription_type": "none",
+                    "subscription_expiry": None,
+                })
+                expired_count += 1
+    except Exception as e:
+        errors.append(f"Firebase: {e}")
+
+    db = SessionLocal()
+    matches_count = 0
+    predictions_count = 0
+    coupon_info = None
+    try:
+        from app.services.data_collector import save_matches_to_db
+        try:
+            save_matches_to_db(db)
+            matches_count = 0
+        except Exception as e:
+            errors.append(f"Data collection: {e}")
+
+        from app.services.coupon_service import update_coupon_results
+        try:
+            update_coupon_results(db)
+        except Exception as e:
+            errors.append(f"Coupon update: {e}")
+
+        from app.services.prediction_engine import predict_all_upcoming_matches
+        try:
+            predictions = predict_all_upcoming_matches(db)
+            predictions_count = len(predictions)
+        except Exception as e:
+            errors.append(f"Predictions: {e}")
+
+        from app.services.coupon_service import generate_daily_coupon
+        try:
+            coupon = generate_daily_coupon(db)
+            coupon_info = {"id": coupon.id, "status": coupon.status} if coupon else None
+        except Exception as e:
+            errors.append(f"Coupon generation: {e}")
+
         return {
             "message": "Mise à jour terminée",
-            "predictions": len(predictions),
-            "coupon": coupon.id if coupon else None,
-            "coupon_status": coupon.status if coupon else None,
+            "predictions": predictions_count,
+            "coupon": coupon_info,
             "expired_subscriptions_revoked": expired_count,
+            "errors": errors if errors else None,
         }
     finally:
         db.close()
