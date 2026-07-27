@@ -47,13 +47,23 @@ def get_session_user(request: Request):
 
 
 def is_subscribed(user):
-    if not user or user.get("subscription_type") == "none":
+    if not user:
+        return False
+    if user.get("subscription_type") == "none":
         return False
     if user.get("subscription_expiry"):
         if isinstance(user["subscription_expiry"], datetime):
             if user["subscription_expiry"] < datetime.now():
                 return False
     return True
+
+
+def firebase_available():
+    try:
+        from app.firebase_db import _firebase_app
+        return _firebase_app is not None
+    except Exception:
+        return False
 
 
 def get_logo_url(team_id, db):
@@ -77,7 +87,7 @@ def get_initials(name):
 @router.get("/", response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
     user = get_session_user(request)
-    subscribed = is_subscribed(user)
+    subscribed = is_subscribed(user) or not firebase_available()
 
     generate_daily_coupon(db)
     coupon = db.query(Coupon).order_by(Coupon.date.desc()).first()
@@ -122,7 +132,7 @@ def home(request: Request, db: Session = Depends(get_db)):
 @router.get("/predictions", response_class=HTMLResponse)
 def predictions_page(request: Request, all: bool = False, db: Session = Depends(get_db)):
     user = get_session_user(request)
-    subscribed = is_subscribed(user)
+    subscribed = is_subscribed(user) or not firebase_available()
 
     query = db.query(Prediction).join(Match)
     if not all:
@@ -272,6 +282,7 @@ def stats_page(request: Request, db: Session = Depends(get_db)):
 @router.get("/top-picks", response_class=HTMLResponse)
 def top_picks(request: Request, min_confidence: int = 0, db: Session = Depends(get_db)):
     user = get_session_user(request)
+    subscribed = is_subscribed(user) or not firebase_available()
     query = db.query(Prediction).join(Match).filter(Match.status == "SCHEDULED")
     if min_confidence > 0:
         query = query.filter(Prediction.confidence_score >= min_confidence)
@@ -288,6 +299,7 @@ def top_picks(request: Request, min_confidence: int = 0, db: Session = Depends(g
             })
     return templates.TemplateResponse(request, "top_picks.html", {
         "predictions": predictions, "min_confidence": min_confidence,
+        "subscribed": subscribed,
         "session": {"user_id": user.get("id") if user else None},
     })
 
@@ -309,7 +321,7 @@ def live_matches(request: Request, db: Session = Depends(get_db)):
         })
     return templates.TemplateResponse(request, "live.html", {
         "live_matches": live_matches,
-        "subscribed": is_subscribed(user),
+        "subscribed": is_subscribed(user) or not firebase_available(),
         "session": {"user_id": user.get("id") if user else None},
     })
 
