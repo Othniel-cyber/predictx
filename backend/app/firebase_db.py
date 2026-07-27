@@ -1,4 +1,5 @@
 import os
+import json
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
 
@@ -10,7 +11,14 @@ def init_firebase():
     global _firebase_app, _db
     if _firebase_app:
         return
-    from app.config import FIREBASE_KEY_PATH
+    from app.config import FIREBASE_KEY_PATH, FIREBASE_KEY_JSON
+
+    if FIREBASE_KEY_JSON:
+        cred = credentials.Certificate(json.loads(FIREBASE_KEY_JSON))
+        _firebase_app = firebase_admin.initialize_app(cred)
+        _db = firestore.client()
+        return
+
     key_path = FIREBASE_KEY_PATH
     if not key_path:
         for f in os.listdir("."):
