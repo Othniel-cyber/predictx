@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.models.match import Match
 from app.models.team import Team
@@ -10,18 +11,40 @@ from app.services.api_client import get_matches_by_date
 def get_or_create_team(db: Session, fotmob_id, name):
     if not name:
         return None
+    if not fotmob_id or fotmob_id == 0:
+        fotmob_id = None
     team = db.query(Team).filter_by(api_id=fotmob_id).first()
     if not team:
         team = db.query(Team).filter_by(name=name).first()
     if not team:
-        team = Team(api_id=fotmob_id, name=name, crest_url=f"https://images.fotmob.com/image_resources/logo/teamlogo/{fotmob_id}.png")
-        db.add(team)
-        db.commit()
-        db.refresh(team)
+        team = Team(api_id=fotmob_id, name=name, crest_url=f"https://images.fotmob.com/image_resources/logo/teamlogo/{fotmob_id}.png" if fotmob_id else None)
+        try:
+            db.add(team)
+            db.commit()
+            db.refresh(team)
+        except IntegrityError:
+            db.rollback()
+            existing = db.query(Team).filter_by(api_id=fotmob_id).first()
+            if existing:
+                return existing
+            existing = db.query(Team).filter_by(name=name).first()
+            if existing:
+                return existing
+            db.add(team)
+            db.commit()
+            db.refresh(team)
     elif not team.api_id:
         team.api_id = fotmob_id
         team.crest_url = f"https://images.fotmob.com/image_resources/logo/teamlogo/{fotmob_id}.png"
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            other = db.query(Team).filter_by(api_id=fotmob_id).first()
+            if other:
+                return other
+            team.api_id = fotmob_id
+            db.commit()
     return team
 
 

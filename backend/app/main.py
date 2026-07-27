@@ -13,7 +13,10 @@ from app.routers.web_router import router as web_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"DB init error: {e}")
     try:
         from app.firebase_db import init_firebase
         init_firebase()
