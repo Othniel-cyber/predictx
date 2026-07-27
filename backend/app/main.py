@@ -1,10 +1,11 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
+from app.config import ALLOWED_ORIGINS, API_UPDATE_KEY
 from app.routers.coupon_router import router as coupon_router
 from app.routers.web_router import router as web_router
 
@@ -22,11 +23,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="PredictX API", lifespan=lifespan)
+origins = [o.strip() for o in ALLOWED_ORIGINS.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -40,11 +42,29 @@ def api_root():
 
 
 @app.get("/api/update")
-def update_data():
+def update_data(key: str = ""):
+    if API_UPDATE_KEY and key != API_UPDATE_KEY:
+        raise HTTPException(status_code=403, detail="Clé API invalide")
     from app.database import SessionLocal
     from app.services.data_collector import save_matches_to_db
     from app.services.prediction_engine import predict_all_upcoming_matches
     from app.services.coupon_service import generate_daily_coupon, update_coupon_results
+    from app.firebase_db import init_firebase, get_db
+    from datetime import datetime
+    init_firebase()
+    fb_db = get_db()
+    now = datetime.now()
+    expired = fb_db.collection("users").where("subscription_type", "!=", "none").get()
+    expired_count = 0
+    for u in expired:
+        data = u.to_dict()
+        expiry = data.get("subscription_expiry")
+        if expiry and expiry < now:
+            fb_db.collection("users").document(u.id).update({
+                "subscription_type": "none",
+                "subscription_expiry": None,
+            })
+            expired_count += 1
     db = SessionLocal()
     try:
         save_matches_to_db(db)
@@ -56,6 +76,7 @@ def update_data():
             "predictions": len(predictions),
             "coupon": coupon.id if coupon else None,
             "coupon_status": coupon.status if coupon else None,
+            "expired_subscriptions_revoked": expired_count,
         }
     finally:
         db.close()

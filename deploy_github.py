@@ -4,7 +4,8 @@ import requests
 import fnmatch
 import sys
 
-TOKEN = open("prompt.txt", "r").read().strip()
+import os
+TOKEN = os.environ.get("GITHUB_TOKEN") or open("prompt.txt", "r").read().strip()
 OWNER = "Othniel-cyber"
 REPO = "predictx"
 HEADERS = {"Authorization": f"token {TOKEN}", "Accept": "application/vnd.github+json"}

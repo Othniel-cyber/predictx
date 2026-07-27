@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: predictx-api
+    runtime: python
+    region: frankfurt
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: gunicorn app.main:app --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DATABASE_URL
+        value: sqlite:////data/predictx.db
+      - key: WHATSAPP_NUMBER
+        value: "2290140305483"
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+
+  - type: cron
+    name: predictx-daily-update
+    runtime: python
+    region: frankfurt
+    plan: free
+    schedule: "0 6 * * *"
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: python -c "import sys; sys.path.insert(0,'backend'); from app.database import SessionLocal; from app.services.data_collector import save_matches_to_db; from app.services.prediction_engine import predict_all_upcoming_matches; from app.services.coupon_service import generate_daily_coupon, update_coupon_results; from app.firebase_db import init_firebase, get_db; from datetime import datetime; init_firebase(); fb_db=get_db(); now=datetime.now(); expired=[u for u in fb_db.collection('users').where('subscription_type','!=','none').get() if u.to_dict().get('subscription_expiry') and u.to_dict()['subscription_expiry'] < now]; [fb_db.collection('users').document(u.id).update({'subscription_type':'none','subscription_expiry':None}) for u in expired]; db=SessionLocal(); save_matches_to_db(db); update_coupon_results(db); predict_all_upcoming_matches(db); generate_daily_coupon(db); db.close(); print(f'Update done: {len(expired)} expired revoked')"
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////data/predictx.db
+      - key: API_UPDATE_KEY
+        sync: false

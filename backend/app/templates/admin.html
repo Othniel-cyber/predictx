@@ -72,16 +72,19 @@
                 {% if u.subscription_type == 'none' %}
                 <form method="POST" action="/admin/unlock">
                     <input type="hidden" name="user_id" value="{{ u.id }}">
+                    <input type="hidden" name="csrf" value="{{ csrf_token }}">
                     <input type="hidden" name="plan" value="semaine">
                     <button type="submit" class="px-4 py-2 text-xs font-bold rounded-lg text-white transition" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">Semaine</button>
                 </form>
                 <form method="POST" action="/admin/unlock">
                     <input type="hidden" name="user_id" value="{{ u.id }}">
+                    <input type="hidden" name="csrf" value="{{ csrf_token }}">
                     <input type="hidden" name="plan" value="mois">
                     <button type="submit" class="px-4 py-2 text-xs font-bold rounded-lg text-white transition" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">Mois</button>
                 </form>
                 <form method="POST" action="/admin/unlock">
                     <input type="hidden" name="user_id" value="{{ u.id }}">
+                    <input type="hidden" name="csrf" value="{{ csrf_token }}">
                     <input type="hidden" name="plan" value="annee">
                     <button type="submit" class="px-4 py-2 text-xs font-bold rounded-lg text-white transition" style="background: linear-gradient(135deg, #f59e0b, #d97706);">Année</button>
                 </form>
@@ -89,6 +92,7 @@
                 <span class="text-xs text-green-400 font-medium">✅ Actif</span>
                 <form method="POST" action="/admin/lock">
                     <input type="hidden" name="user_id" value="{{ u.id }}">
+                    <input type="hidden" name="csrf" value="{{ csrf_token }}">
                     <button type="submit" class="px-4 py-2 text-xs font-bold rounded-lg btn-danger text-white transition">Bloquer</button>
                 </form>
                 {% endif %}

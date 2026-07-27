@@ -1,7 +1,8 @@
+import secrets
 from datetime import datetime
 import hashlib
 
-from fastapi import APIRouter, Request, Form, Depends
+from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -12,16 +13,30 @@ from app.models.prediction import Prediction
 from app.models.match import Match
 from app.models.coupon import Coupon
 from app.models.coupon_match import CouponMatch
-from app.config import ADMIN_PASSWORD
+from app.config import ADMIN_PASSWORD, WHATSAPP_NUMBER
 from app.services.coupon_service import generate_daily_coupon
 from app.firebase_db import get_user, get_user_by_email, create_user, update_subscription, remove_subscription, get_all_users, search_users, get_auth, init_firebase
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["WHATSAPP_NUMBER"] = WHATSAPP_NUMBER
 
 
 def hash_password(pw):
     return hashlib.sha256(pw.encode()).hexdigest()
+
+
+def _csrf_token(request: Request):
+    token = request.cookies.get("csrf_token")
+    if not token:
+        token = secrets.token_hex(32)
+    return token
+
+
+def verify_csrf(request: Request, csrf: str = Form("")):
+    stored = request.cookies.get("csrf_token")
+    if not stored or stored != csrf:
+        raise HTTPException(status_code=403, detail="CSRF token invalide")
 
 
 def get_session_user(request: Request):
@@ -359,9 +374,12 @@ def admin_page(request: Request, password: str = None, search: str = None):
         users = search_users(search)
     elif logged_in:
         users = get_all_users()
-    return templates.TemplateResponse(request, "admin.html", {
-        "logged_in": logged_in, "users": users, "search": search, "session": {"user_id": None},
+    csrf = _csrf_token(request)
+    resp = templates.TemplateResponse(request, "admin.html", {
+        "logged_in": logged_in, "users": users, "search": search, "session": {"user_id": None}, "csrf_token": csrf,
     })
+    resp.set_cookie(key="csrf_token", value=csrf, max_age=86400, httponly=True, samesite="lax")
+    return resp
 
 
 @router.post("/admin")
@@ -374,15 +392,30 @@ def admin_login(request: Request, password: str = Form(...)):
 
 
 @router.post("/admin/unlock")
-def admin_unlock(user_id: str = Form(...), plan: str = Form(...)):
+def admin_unlock(request: Request, user_id: str = Form(...), plan: str = Form(...), csrf: str = Form("")):
+    verify_csrf(request, csrf)
     update_subscription(user_id, plan)
     return RedirectResponse(url="/admin", status_code=303)
 
 
 @router.post("/admin/lock")
-def admin_lock(user_id: str = Form(...)):
+def admin_lock(request: Request, user_id: str = Form(...), csrf: str = Form("")):
+    verify_csrf(request, csrf)
     remove_subscription(user_id)
     return RedirectResponse(url="/admin", status_code=303)
+
+
+@router.get("/api/subscription-status")
+def subscription_status(request: Request):
+    user = get_session_user(request)
+    if not user:
+        return {"subscribed": False, "authenticated": False}
+    return {
+        "subscribed": is_subscribed(user),
+        "authenticated": True,
+        "subscription_type": user.get("subscription_type", "none"),
+        "subscription_expiry": str(user.get("subscription_expiry")) if user.get("subscription_expiry") else None,
+    }
 
 
 @router.get("/match/{match_id}", response_class=HTMLResponse)

@@ -23,7 +23,7 @@ def compute_features_for_match(db: Session, match: Match, home_team: Team, away_
     home_matches = db.query(Match).filter(
         Match.status == "FINISHED",
         Match.date.between(cutoff, now),
-        ((Match.home_team_id == home_team.id) | (Match.away_team_id == away_team.id)),
+        ((Match.home_team_id == home_team.id) | (Match.away_team_id == home_team.id)),
     ).order_by(Match.date.desc()).limit(20).all()
 
     away_matches = db.query(Match).filter(

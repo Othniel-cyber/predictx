@@ -146,6 +146,14 @@ def _check_result(market, hs, aw):
         return "WON" if hs + aw > 2.5 else "LOST"
     if market == "Under 2.5":
         return "WON" if hs + aw < 2.5 else "LOST"
+    if market == "Over 3.5":
+        return "WON" if hs + aw > 3.5 else "LOST"
+    if market == "Under 3.5":
+        return "WON" if hs + aw < 3.5 else "LOST"
+    if market == "Over 4.5":
+        return "WON" if hs + aw > 4.5 else "LOST"
+    if market == "Under 4.5":
+        return "WON" if hs + aw < 4.5 else "LOST"
     if market == "GG":
         return "WON" if hs > 0 and aw > 0 else "LOST"
     if market == "NG":

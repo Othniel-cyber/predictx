@@ -7,18 +7,21 @@
     {% block head_extra %}{% endblock %}
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'><text y='32' font-size='32'>⚡</text></svg>">
     <style>
         * { font-family: 'Inter', sans-serif; }
-        body { background: #0a0e17; color: #e2e8f0; }
+        body { background: #0a0e17; color: #e2e8f0; min-height: 100vh; }
+        ::selection { background: rgba(59,130,246,0.3); color: #fff; }
         .bg-card { background: linear-gradient(145deg, #111827, #0f1729); border: 1px solid #1e293b; }
-        .bg-card:hover { border-color: #3b82f6; box-shadow: 0 0 20px rgba(59,130,246,0.1); }
+        .bg-card:hover { border-color: #3b82f6; box-shadow: 0 0 25px rgba(59,130,246,0.08); }
         .bg-gradient-card { background: linear-gradient(135deg, #1e3a8a22, #312e8122); border: 1px solid #1e293b; }
         .text-glow { text-shadow: 0 0 20px rgba(59,130,246,0.3); }
         .btn-primary { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-        .btn-primary:hover { background: linear-gradient(135deg, #60a5fa, #3b82f6); box-shadow: 0 0 20px rgba(59,130,246,0.4); }
+        .btn-primary:hover { background: linear-gradient(135deg, #60a5fa, #3b82f6); box-shadow: 0 0 25px rgba(59,130,246,0.4); transform: translateY(-1px); }
         .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
-        .btn-success:hover { box-shadow: 0 0 20px rgba(16,185,129,0.4); }
+        .btn-success:hover { box-shadow: 0 0 25px rgba(16,185,129,0.4); transform: translateY(-1px); }
         .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .btn-danger:hover { transform: translateY(-1px); }
         .badge-gold { background: linear-gradient(135deg, #f59e0b, #d97706); }
         .badge-premium { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
         .badge-green { background: linear-gradient(135deg, #10b981, #059669); }
@@ -32,6 +35,8 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-pulse-slow { animation: pulse 3s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .animate-slide-up { animation: slideUp 0.4s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .conf-10 { background: #10b981; box-shadow: 0 0 10px rgba(16,185,129,0.5); }
         .conf-9 { background: #34d399; }
         .conf-8 { background: #3b82f6; }
@@ -44,11 +49,26 @@
         .conf-1 { background: #991b1b; }
         .blur-content { filter: blur(4px); pointer-events: none; user-select: none; }
         .stat-card { background: linear-gradient(145deg, #111827, #0f1729); border: 1px solid #1e293b; border-radius: 16px; padding: 20px; transition: all 0.3s; }
-        .stat-card:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(59,130,246,0.15); }
+        .stat-card:hover { border-color: #3b82f6; transform: translateY(-3px); box-shadow: 0 8px 30px rgba(59,130,246,0.15); }
         .live-dot { display: inline-block; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; animation: pulse 1.5s infinite; }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); }
+        .shimmer { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false">
+    <script>
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || (e.ctrlKey && e.key === 'U')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        document.addEventListener('dragstart', function(e) { e.preventDefault(); });
+        document.addEventListener('selectstart', function(e) { e.preventDefault(); });
+    </script>
     <nav class="bg-card border-b border-gray-800 sticky top-0 z-50 backdrop-blur-lg">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16 items-center">
@@ -127,7 +147,7 @@
                 <div>
                     <div class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Contact</div>
                     <div class="space-y-2 text-sm text-gray-500">
-                        <a href="https://wa.me/2290140305483" target="_blank" class="block hover:text-white">WhatsApp</a>
+                        <a href="https://wa.me/{{ WHATSAPP_NUMBER }}" target="_blank" class="block hover:text-white">WhatsApp</a>
                         <a href="mailto:support@predictx.com" class="block hover:text-white">Email</a>
                     </div>
                 </div>

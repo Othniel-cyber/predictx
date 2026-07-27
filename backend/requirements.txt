@@ -1,7 +1,15 @@
 fastapi
-uvicorn
+uvicorn[standard]
 sqlalchemy
 requests
 scipy
 python-dotenv
 pydantic
+firebase-admin
+scikit-learn
+joblib
+numpy
+pandas
+jinja2
+python-multipart
+gunicorn

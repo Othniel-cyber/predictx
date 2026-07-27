@@ -12,6 +12,12 @@ from app.services.coupon_service import generate_daily_coupon, update_coupon_res
 
 def daily_update():
     Base.metadata.create_all(bind=engine)
+    print(f"[{datetime.now()}] Vérification des abonnements expirés...")
+    try:
+        from scripts.check_expirations import check_expirations
+        check_expirations()
+    except Exception as e:
+        print(f"[{datetime.now()}] Erreur vérification expirations: {e}")
     db = SessionLocal()
     try:
         print(f"[{datetime.now()}] Collecte des matchs FotMob...")

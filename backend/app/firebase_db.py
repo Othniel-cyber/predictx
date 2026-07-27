@@ -10,11 +10,13 @@ def init_firebase():
     global _firebase_app, _db
     if _firebase_app:
         return
-    key_path = None
-    for f in os.listdir("."):
-        if f.endswith(".json") and "firebase" in f.lower() and "adminsdk" in f.lower():
-            key_path = f
-            break
+    from app.config import FIREBASE_KEY_PATH
+    key_path = FIREBASE_KEY_PATH
+    if not key_path:
+        for f in os.listdir("."):
+            if f.endswith(".json") and "firebase" in f.lower() and "adminsdk" in f.lower():
+                key_path = f
+                break
     if not key_path:
         raise FileNotFoundError("Aucun fichier de clé Firebase trouvé")
     cred = credentials.Certificate(key_path)
