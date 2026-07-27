@@ -73,7 +73,7 @@ def map_status(fotmob_status):
     return "SCHEDULED"
 
 
-def save_matches_to_db(db: Session, days_back=2, days_forward=5):
+def save_matches_to_db(db: Session, days_back=1, days_forward=3):
     today = datetime.now()
     for offset in range(-days_back, days_forward + 1):
         day = today + timedelta(days=offset)
@@ -122,10 +122,15 @@ def save_matches_to_db(db: Session, days_back=2, days_forward=5):
 
 def fix_match_dates(db: Session):
     import requests
-    matches = db.query(Match).filter(Match.date == Match.date).all()
+    now = datetime.now()
+    cutoff = now - timedelta(days=1)
+    future = now + timedelta(days=7)
+    matches = db.query(Match).filter(
+        Match.date >= cutoff,
+        Match.date <= future,
+        Match.api_id.isnot(None),
+    ).all()
     for match in matches:
-        if not match.api_id:
-            continue
         try:
             data = requests.get(
                 f"https://www.fotmob.com/api/data/matchDetails?id={match.api_id}",
