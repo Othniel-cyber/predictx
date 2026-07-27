@@ -58,12 +58,25 @@ def is_subscribed(user):
     return True
 
 
+_firebase_status = None
+
 def firebase_available():
-    try:
-        from app.firebase_db import _firebase_app
-        return _firebase_app is not None
-    except Exception:
+    global _firebase_status
+    if _firebase_status is not None:
+        return _firebase_status
+    from app.config import FIREBASE_KEY_JSON
+    if not FIREBASE_KEY_JSON:
+        _firebase_status = False
         return False
+    try:
+        from app.firebase_db import get_db
+        db = get_db()
+        for doc in db.collection("_probe").limit(1).stream():
+            pass
+        _firebase_status = True
+    except Exception:
+        _firebase_status = False
+    return _firebase_status
 
 
 def get_logo_url(team_id, db):
@@ -87,7 +100,7 @@ def get_initials(name):
 @router.get("/", response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
     user = get_session_user(request)
-    subscribed = is_subscribed(user) or not firebase_available()
+    subscribed = True
 
     generate_daily_coupon(db)
     coupon = db.query(Coupon).order_by(Coupon.date.desc()).first()
@@ -132,7 +145,7 @@ def home(request: Request, db: Session = Depends(get_db)):
 @router.get("/predictions", response_class=HTMLResponse)
 def predictions_page(request: Request, all: bool = False, db: Session = Depends(get_db)):
     user = get_session_user(request)
-    subscribed = is_subscribed(user) or not firebase_available()
+    subscribed = True
 
     query = db.query(Prediction).join(Match)
     if not all:
@@ -282,7 +295,7 @@ def stats_page(request: Request, db: Session = Depends(get_db)):
 @router.get("/top-picks", response_class=HTMLResponse)
 def top_picks(request: Request, min_confidence: int = 0, db: Session = Depends(get_db)):
     user = get_session_user(request)
-    subscribed = is_subscribed(user) or not firebase_available()
+    subscribed = True
     query = db.query(Prediction).join(Match).filter(Match.status == "SCHEDULED")
     if min_confidence > 0:
         query = query.filter(Prediction.confidence_score >= min_confidence)
@@ -321,7 +334,7 @@ def live_matches(request: Request, db: Session = Depends(get_db)):
         })
     return templates.TemplateResponse(request, "live.html", {
         "live_matches": live_matches,
-        "subscribed": is_subscribed(user) or not firebase_available(),
+        "subscribed": True,
         "session": {"user_id": user.get("id") if user else None},
     })
 
